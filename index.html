@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<!-- erzeugt: claude-code | 2026-09-21 | Entwurf, Inhalte aus dem Vault (Promotexte, Gig-Archiv, Links) -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RHIZOMATIQUE</title>
+<meta name="description" content="RHIZOMATIQUE: live und improvisiert. Funk, Jazz, House und Techno aus Berlin und Dresden.">
+<link rel="preconnect" href="https://w.soundcloud.com">
+<link rel="preconnect" href="https://widget.sndcdn.com">
+<link rel="preconnect" href="https://api-widget.soundcloud.com">
+<style>
+  :root{
+    --bg:#07080c; --fg:#eceef3; --dim:#9aa0b1; --accent:#7cf0c8; --line:rgba(255,255,255,.14);
+    --pad:clamp(20px,5vw,72px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;overflow-x:hidden}
+  @media (pointer:coarse){html{scroll-snap-type:y mandatory}}
+  body{background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration-color:var(--line);text-underline-offset:4px}
+  a:hover{color:var(--accent);text-decoration-color:var(--accent)}
+
+  /* Hintergrund: Canvas liegt hinter allem, Inhalt scrollt darüber */
+  #bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block}
+  .veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+        background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(7,8,12,.55) 100%)}
+
+  header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;
+         padding:18px var(--pad);mix-blend-mode:normal}
+  header .logo{font-weight:700;letter-spacing:.18em;font-size:14px;text-decoration:none}
+  nav{display:flex;gap:clamp(14px,3vw,32px);font-size:14px;letter-spacing:.08em;text-transform:uppercase}
+  nav a{text-decoration:none;color:var(--dim)}
+  nav a:hover{color:var(--fg)}
+  nav a[aria-current="true"]{color:var(--fg);text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:8px}
+  #nav-toggle{all:unset;display:none;cursor:pointer;width:40px;height:40px;position:relative;border-radius:50%}
+  #nav-toggle:focus-visible{outline:2px solid var(--accent)}
+  #nav-toggle span{position:absolute;left:10px;right:10px;height:2px;background:var(--fg);border-radius:1px;transition:transform .25s,opacity .2s}
+  #nav-toggle span:nth-child(1){top:14px}
+  #nav-toggle span:nth-child(2){top:19px}
+  #nav-toggle span:nth-child(3){top:24px}
+  header.open #nav-toggle span:nth-child(1){transform:translateY(5px) rotate(45deg)}
+  header.open #nav-toggle span:nth-child(2){opacity:0}
+  header.open #nav-toggle span:nth-child(3){transform:translateY(-5px) rotate(-45deg)}
+
+  main{position:relative;z-index:2}
+  section{min-height:100vh;padding:120px var(--pad) 80px;display:flex;flex-direction:column;justify-content:center;max-width:1100px}
+  section,footer{scroll-snap-align:start}
+  section{scroll-snap-stop:always}
+  /* Lesbarkeit: weicher, leicht unscharfer Schleier hinter dem Text + Schatten */
+  section{position:relative}
+  section::before{content:"";position:absolute;z-index:-1;inset:6% -8% 6% -10%;pointer-events:none;
+    background:radial-gradient(ellipse 70% 62% at 32% 52%,rgba(7,8,12,.82) 0%,rgba(7,8,12,.6) 50%,rgba(7,8,12,0) 100%)}
+  section h1,section h2,section p,section li,section a{text-shadow:0 1px 3px rgba(0,0,0,.85)}
+  section.hero{justify-content:flex-end;padding-bottom:12vh}
+  h1{font-size:clamp(40px,10vw,132px);line-height:.95;letter-spacing:.02em;font-weight:800}
+  .tag{margin-top:22px;max-width:34ch;color:var(--dim);font-size:clamp(17px,2vw,22px)}
+  h2{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin-bottom:28px;font-weight:600}
+  p{max-width:60ch;margin-bottom:1.1em}
+  p.lead{font-size:clamp(19px,2.4vw,26px);line-height:1.45;color:var(--fg)}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px 48px;max-width:860px}
+
+  figure.gruppe{margin-top:16px;max-width:860px}
+  figure.gruppe img{display:block;width:100%;height:auto;max-height:26vh;object-fit:cover;object-position:50% 30%;border-radius:4px;filter:grayscale(1) contrast(1.05)}
+  @media (max-height:760px){figure.gruppe img{max-height:18vh}}
+  ul.list{list-style:none;max-width:640px}
+  ul.list li{display:flex;justify-content:space-between;gap:24px;padding:12px 0;border-bottom:1px solid var(--line)}
+  ul.list li span:last-child{color:var(--dim);white-space:nowrap}
+  ul.list a.rec{margin-left:10px;font-size:.88em;color:var(--accent);white-space:nowrap}
+  ul.list li span:last-child a.rec{text-decoration:none}
+  ul.links{list-style:none;display:flex;flex-wrap:wrap;gap:12px 28px}
+  ul.links a{font-size:19px}
+
+  /* Eigene Player-Leiste unten mittig; das SoundCloud-Widget bleibt als
+     unsichtbarer Motor im DOM (Plays zaehlen weiter dort). */
+  #sc-frame{position:fixed;left:0;bottom:0;width:300px;height:166px;border:0;opacity:0;pointer-events:none;z-index:-1}
+  #rhz-bar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:6px;
+    max-width:min(560px,calc(100vw - 24px));padding:6px 14px 6px 8px;border-radius:999px;
+    background:rgba(7,8,12,.88);border:1px solid var(--line)}
+  #rhz-bar:not(.ready) button{opacity:.45}
+  #rhz-bar button{all:unset;flex:none;cursor:pointer;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;color:var(--fg)}
+  #rhz-bar button:hover{color:var(--accent)}
+  #rhz-bar button:focus-visible{outline:2px solid var(--accent)}
+  #rhz-bar svg{width:18px;height:18px;fill:currentColor}
+  #rhz-bar #rb-play{width:38px;height:38px;background:var(--accent);color:#07080c}
+  #rhz-bar #rb-play:hover{color:#07080c;filter:brightness(1.12)}
+  #rhz-bar #rb-play .pa{display:none}
+  #rhz-bar.on #rb-play .pl{display:none}
+  #rhz-bar.on #rb-play .pa{display:block}
+  #rb-seek{position:absolute;left:22px;right:22px;bottom:2px;height:16px;cursor:pointer;touch-action:none;--p:0%}
+  #rb-seek::before{content:"";position:absolute;left:0;right:0;top:7px;height:3px;border-radius:2px;background:rgba(255,255,255,.2)}
+  #rb-seek::after{content:"";position:absolute;left:0;top:7px;height:3px;border-radius:2px;width:var(--p);background:var(--accent)}
+  #rb-seek:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  #rhz-bar{padding-bottom:18px}
+  #rb-title{min-width:0;margin-left:6px;font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+  footer{padding-bottom:80px}
+
+  footer{position:relative;z-index:2;padding:32px var(--pad);color:var(--dim);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  #logo{position:fixed;left:0;top:0;z-index:1;pointer-events:none;mix-blend-mode:screen;opacity:0;will-change:transform,opacity}
+  @media (max-width:640px){
+    section{padding:96px var(--pad) 56px}
+    ul.list li{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0}
+    ul.list li span:last-child{white-space:normal}
+  }
+  @media (max-width:400px){
+    header{padding-top:12px;padding-bottom:12px}
+  }
+  @media (max-width:640px){
+    #nav-toggle{display:block}
+    #rhz-bar{width:calc(100vw - 24px)}
+    #rb-title{flex:1}
+    header nav{position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0;padding:6px var(--pad) 18px;font-size:16px;
+      background:rgba(7,8,12,.97);border-bottom:1px solid var(--line);
+      opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .2s,transform .2s,visibility .2s}
+    header.open nav{opacity:1;visibility:visible;transform:none}
+    header nav a{padding:12px 0;border-bottom:1px solid var(--line)}
+    header nav a:last-child{border-bottom:0}
+  }
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<img id="logo" alt="" aria-hidden="true">
+<div class="veil"></div>
+
+<header>
+  <a class="logo" href="#top">RHZMTQ</a>
+  <button id="nav-toggle" type="button" aria-label="Menü" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><span></span></button>
+  <nav id="site-nav">
+    <a href="#about">Über</a>
+    <a href="#musik">Musik</a>
+    <a href="#upcoming">Demnächst</a>
+    <a href="#live">Live</a>
+    <a href="#kontakt">Kontakt</a>
+    <a href="en.html" hreflang="en">EN</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <section class="hero" data-scene="hero">
+    <h1>RHIZOMATIQUE</h1>
+    <p class="tag">Live und improvisiert. Funk, Jazz, House und Techno.</p>
+  </section>
+
+  <section id="about" data-scene="about">
+    <h2>Über</h2>
+    <p class="lead">RHIZOMATIQUE sind n-1 Personen, meistens zu viert. Fast alles passiert live und improvisiert, jeder Auftritt ist einzigartig und nicht reproduzierbar.</p>
+    <p>Wir kennen uns seit der Kleinstadt, zwei von uns sind Brüder. Heute leben wir in Berlin und Dresden. Musik, Kommunikation, Installation und Progression. Bass, Gitarre, Keys, Synthies, Flöte und Gesang treffen sich mit Ableton im RHZMTQ-Soundkosmos und fusionieren zu Funk, Jazz, House und Techno.</p>
+    <p>Wir treten wie eine Band auf, funktionieren technisch aber wie ein DJ: Wir mischen alles selbst und geben nur eine Stereosumme aus.</p>
+    <figure class="gruppe"><img src="img/gruppe.jpg" alt="RHIZOMATIQUE, Gruppenfoto in Schwarz-Weiß" loading="lazy"></figure>
+  </section>
+
+  <section id="musik" data-scene="music">
+    <h2>Musik</h2>
+    <p class="lead">Mixtape 001, Live-Sets und Videos.</p>
+
+
+    <ul class="links">
+      <li><a href="https://soundcloud.com/rhizomatique" target="_blank" rel="noopener">SoundCloud</a></li>
+      <li><a href="https://www.youtube.com/channel/UCX6G1j23-KWB_-kSAsPN5Ag" target="_blank" rel="noopener">YouTube</a></li>
+      <li><a href="https://www.facebook.com/rhizomat" target="_blank" rel="noopener">Facebook</a></li>
+      <li><a href="https://www.instagram.com/rhzmtq" target="_blank" rel="noopener">Instagram</a></li>
+    </ul>
+  </section>
+
+  <section id="upcoming" data-scene="upcoming">
+    <h2>Demnächst</h2>
+    <ul class="list">
+      <li><span><a href="https://ra.co/clubs/99161" target="_blank" rel="noopener">Kater Blau, Berlin</a></span><span>7.11.2026</span></li>
+    </ul>
+  </section>
+
+  <section id="live" data-scene="live">
+    <h2>Live (Auswahl)</h2>
+    <ul class="list">
+      <li><span>Sisyphos</span><span>Berlin, 2025</span></li>
+      <li><span>Klangtherapie Festival</span><span>Plankenfels, 2022</span></li>
+      <li><span>Sektor Evolution</span><span>Dresden, 2022 <a class="rec" href="https://soundcloud.com/rhizomatique/schadensbegrenzung" target="_blank" rel="noopener">▶ Aufnahme</a></span></li>
+      <li><span>35c3</span><span>Leipzig, 2018</span></li>
+      <li><span>Festival für Selbstgebaute Musik</span><span>Berlin, 2015–2019</span></li>
+      <li><span>Mensch Meier</span><span>Berlin, 2016–2019 <a class="rec" href="https://soundcloud.com/rhizomatique/live-jam-mensch-meier" target="_blank" rel="noopener">▶ Aufnahme</a></span></li>
+      <li><span>Garbicz Festival</span><span>Polen, 2016 <a class="rec" href="https://soundcloud.com/rhizomatique/rhizomatique-garbicz-festival-2016" target="_blank" rel="noopener">▶ Aufnahme</a></span></li>
+      <li><span>about:blank</span><span>Berlin, 2015 <a class="rec" href="https://soundcloud.com/rhizomatique/about-blank" target="_blank" rel="noopener">▶ Aufnahme</a></span></li>
+    </ul>
+  </section>
+
+  <section id="kontakt" data-scene="contact">
+    <h2>Kontakt</h2>
+    <p class="lead"><a href="mailto:rhizomat.berlin@gmail.com">rhizomat.berlin@gmail.com</a></p>
+    <p>Booking, Anfragen, Techrider auf Anfrage.</p>
+  </section>
+
+</main>
+
+<footer>
+  <span>© RHIZOMATIQUE</span>
+  <span>Berlin · Dresden</span>
+  <span><a href="regeln.html" style="color:inherit;opacity:.45;font-size:.9em" title="Wie die Muster im Hintergrund entstehen">Regeln</a></span>
+</footer>
+
+<div id="rhz-bar" role="group" aria-label="Player" data-l-play="Abspielen" data-l-pause="Pause" data-l-idle="Track wählen mit ▶">
+  <button id="rb-prev" type="button" aria-label="Zurück"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+  <button id="rb-play" type="button" aria-label="Abspielen"><svg class="pl" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="pa" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></button>
+  <button id="rb-next" type="button" aria-label="Weiter"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+  <div id="rb-seek" role="slider" tabindex="0" aria-label="Position im Track" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+  <a id="rb-title" href="https://soundcloud.com/rhizomatique" target="_blank" rel="noopener" title="Auf SoundCloud öffnen">RHIZOMATIQUE</a>
+</div>
+<iframe id="sc-frame" title="SoundCloud-Player: alle Tracks von RHIZOMATIQUE" scrolling="no" allow="autoplay; encrypted-media"
+        src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fapi.soundcloud.com%2Fusers%2F184583109&amp;color=%237cf0c8&amp;auto_play=false&amp;show_artwork=true&amp;visual=false&amp;show_comments=false&amp;hide_related=true&amp;show_reposts=false"></iframe>
+
+<script src="https://w.soundcloud.com/player/api.js"></script>
+<script src="rhz.js"></script>
+</body>
+</html>

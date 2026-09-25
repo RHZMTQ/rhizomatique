@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!-- erzeugt: claude-code | 2026-09-23 | dezent verlinkt aus dem Footer von index.html/en.html -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regeln</title>
+<meta name="description" content="Wie die Hintergrund-Animation von RHIZOMATIQUE entsteht: ein zellulärer Automat, dessen Regeln sich in wenige Verhaltensklassen einteilen lassen.">
+<style>
+  :root{ --bg:#07080c; --fg:#eceef3; --dim:#9aa0b1; --accent:#7cf0c8; --line:rgba(255,255,255,.14); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  main{max-width:760px;margin:0 auto;padding:56px 20px 80px}
+  a{color:var(--accent)}
+  h1{font-size:clamp(28px,5vw,44px);margin-bottom:.3em}
+  p.lead{color:var(--dim);max-width:60ch;margin-bottom:2em}
+  p{max-width:64ch;margin-bottom:1.1em}
+  h2{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:2.4em 0 .6em;font-weight:600}
+  .demos{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:1.4em 0 2em}
+  @media (max-width:560px){ .demos{grid-template-columns:1fr} }
+  .demo{border:1px solid var(--line);border-radius:8px;padding:16px;background:#0a0b10}
+  .demo canvas{display:block;width:100%;aspect-ratio:1;background:#000;border-radius:4px}
+  .demo h3{font-size:15px;margin:12px 0 4px}
+  .demo p{font-size:13px;color:var(--dim);margin:0}
+  footer{max-width:760px;margin:0 auto;padding:0 20px 60px;color:var(--dim);font-size:13px}
+  .back{display:inline-block;margin-bottom:2em;color:var(--dim);text-decoration:none;font-size:14px}
+  .back:hover{color:var(--fg)}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">← RHIZOMATIQUE</a>
+  <h1>Wie die Muster entstehen</h1>
+  <p class="lead">Der Hintergrund dieser Seite ist kein Video und keine Zufallsanimation, sondern ein zellulärer Automat auf einem sechseckigen Raster: eine feste Regel entscheidet Generation für Generation, welche Zelle als Nächstes lebt. Je nach Regel sieht das langfristige Verhalten sehr unterschiedlich aus – und lässt sich in wenige Klassen einteilen.</p>
+
+  <p>Das ist nicht neu erfunden: Stephen Wolfram hat in seinem <a href="https://www.wolframscience.com/nks/" target="_blank" rel="noopener">„A New Kind of Science"-Projekt</a> gezeigt, dass sich das Langzeitverhalten zellulärer Automaten grob in wenige Klassen einteilen lässt – von starr/periodisch bis chaotisch. Für das hexagonale Raster hier (Code: <code>src/analysis/ruleClassifier.py</code>) gilt dieselbe Grundidee, mit vier Klassen:</p>
+
+  <p><strong>Ausgestorben</strong> – die Population stirbt komplett aus. <strong>Periodisch</strong> – der Automat läuft irgendwann exakt im Kreis, derselbe Zustand kehrt wieder. <strong>Explosiv</strong> – die Zellen füllen praktisch das ganze Raster. <strong>Chaotisch</strong> – keins von beidem tritt ein, das Muster bleibt unvorhersehbar in Bewegung. Gemessen, nicht geschätzt: jede Regel läuft dafür tatsächlich durch, bis eine der vier Bedingungen zutrifft.</p>
+
+  <h2>Zwei gemessene Beispiele</h2>
+  <p style="font-size:14px;color:var(--dim)">Beide laufen hier live, mit derselben Startzelle (Rastermitte) und Rastergröße, mit der <code>ruleClassifier.py</code> sie tatsächlich klassifiziert hat – kein nachgestelltes Beispiel.</p>
+  <div class="demos">
+    <div class="demo">
+      <canvas id="c-periodic"></canvas>
+      <h3>Periodisch</h3>
+      <p>Läuft exakt alle 14 Generationen im Kreis.</p>
+    </div>
+    <div class="demo">
+      <canvas id="c-explosive"></canvas>
+      <h3>Explosiv</h3>
+      <p>Füllt ab Generation 58 über 70 % des Rasters.</p>
+    </div>
+  </div>
+
+  <p>Die meisten Regeln, die tatsächlich in den Videos und im Player auftauchen, sind chaotisch in diesem Sinn – sie sterben nicht aus, wiederholen sich nicht exakt und wuchern nicht über den Bildschirm. Genau dieser Mittelbereich klingt am ehesten nach Musik.</p>
+</main>
+<footer>Teil von <a href="index.html">RHIZOMATIQUE</a>.</footer>
+
+<script src="automaton.js"></script>
+<script>
+(() => {
+  'use strict';
+  // Kleine, eigenstaendige Vorfuehrung - nicht der Seiten-Hintergrund
+  // (rhz-bg.js): dieselbe Rastergroesse (30x30) und dieselbe einzelne
+  // Startzelle in der Mitte, mit der src/analysis/ruleClassifier.py diese
+  // beiden Regeln tatsaechlich klassifiziert hat (siehe RENDERLOG/Commit
+  // fuer die Suche). Einfache Sechseck-Fuellung statt der Kachelbilder.
+  const GX = 30, GY = 30;
+  const CENTER_SEED = [[GX >> 1, GY >> 1, 0]];
+  const DEMOS = [
+    { id: 'c-periodic', color: [80,150,230], seeds: CENTER_SEED, resetAfter: 14 * 4,
+      ruleSet: [[0,0,0,1,0,0],[0,0,0,1,0,0]] },   // gemessen: cycle_length 14
+    { id: 'c-explosive', color: [240,160,40], seeds: CENTER_SEED, resetAfter: 58 + 30,
+      ruleSet: [[1,1,1,0,0,1],[1,0,1,0,0,0],[1,0,1,0,0,1],[1,1,1,1,1,1],[1,1,0,0,1,0],[1,0,1,1,0,1],[1,1,1,1,0,1],[0,1,0,0,1,1],[0,0,0,0,1,1],[0,0,1,1,0,1],[1,1,1,0,1,1],[1,1,0,0,0,0],[1,1,0,1,0,0],[1,1,1,0,0,0],[1,0,0,1,1,1],[0,1,0,1,0,1],[1,1,1,1,0,0],[0,0,1,0,0,1],[0,0,1,0,0,0],[0,1,0,0,0,1],[0,1,1,0,1,0],[0,1,1,1,1,0],[1,0,0,0,0,0],[1,0,0,0,0,1],[0,0,1,1,1,0],[1,0,1,1,1,1],[0,0,1,1,1,1],[0,1,1,0,0,0],[1,0,1,0,1,1],[1,1,0,1,1,0],[0,0,1,0,1,0],[1,1,0,0,0,1],[1,1,0,1,1,1],[0,1,1,0,1,1],[0,0,1,0,1,1],[1,1,0,0,1,1],[0,0,0,1,0,1],[0,1,0,0,0,0]] },   // gemessen: explodiert ab Generation 58
+  ];
+
+  function hexPath(ctx, cx, cy, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 3 * i;
+      const x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  function setup(spec) {
+    const canvas = document.getElementById(spec.id);
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const size = canvas.clientWidth || 300;
+    canvas.width = canvas.height = size * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const S = size / (dx * (GX + 1));
+    const r = X_SIZE * S * .46;
+
+    let auto = new HexAutomaton(spec.seeds.map(s => [...s]), spec.ruleSet, spec.color, 0, GX, GY);
+    let last = 0, gen = 0;
+    function frame(now) {
+      requestAnimationFrame(frame);
+      if (now - last < 160) return;
+      last = now;
+      gen++;
+      if (gen > spec.resetAfter) {
+        auto = new HexAutomaton(spec.seeds.map(s => [...s]), spec.ruleSet, spec.color, 0, GX, GY);
+        gen = 0;
+      } else {
+        auto.step();
+      }
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = `rgb(${spec.color.join(',')})`;
+      for (const c of auto.activeCells()) {
+        const px = (c.x * dx + (c.y % 2) * xshift) * S, py = c.y * dy * S;
+        hexPath(ctx, px, py, r);
+        ctx.fill();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  if (typeof HexAutomaton === 'undefined') { console.error('regeln.html: automaton.js fehlt'); }
+  else DEMOS.forEach(setup);
+})();
+</script>
+</body>
+</html>
